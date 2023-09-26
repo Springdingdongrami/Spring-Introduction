@@ -26,7 +26,8 @@ Gradle은 의존관계가 있는 라이브러리를 함께 다운로드한다.
 
 ### thymeleaf 템플릿엔진 동작 확인
 
-![Untitled](1%20%E1%84%91%E1%85%B3%E1%84%85%E1%85%A9%E1%84%8C%E1%85%A6%E1%86%A8%E1%84%90%E1%85%B3%20%E1%84%92%E1%85%AA%E1%86%AB%E1%84%80%E1%85%A7%E1%86%BC%E1%84%89%E1%85%A5%E1%86%AF%E1%84%8C%E1%85%A5%E1%86%BC%20a51b920fe6c7477b8920677a8b24aaf5/Untitled.png)
+![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/c545e4df-07a8-4642-b36c-e1926e857c62)
+
 
 - 컨트롤러에서 리턴 값으로 문자를 반환하면 뷰 리졸버(`viewResolver`)가 화면을 찾아서 처리한다.
     - 스프링 부트 템플릿엔진 기본 viewName 매핑
@@ -43,4 +44,4 @@ Gradle은 의존관계가 있는 라이브러리를 함께 다운로드한다.
 실행 확인
 ```
 
-![Untitled](1%20%E1%84%91%E1%85%B3%E1%84%85%E1%85%A9%E1%84%8C%E1%85%A6%E1%86%A8%E1%84%90%E1%85%B3%20%E1%84%92%E1%85%AA%E1%86%AB%E1%84%80%E1%85%A7%E1%86%BC%E1%84%89%E1%85%A5%E1%86%AF%E1%84%8C%E1%85%A5%E1%86%BC%20a51b920fe6c7477b8920677a8b24aaf5/Untitled%201.png)
+![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/91ae9528-e389-4ce8-978b-f287e72d313a)
