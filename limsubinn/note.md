@@ -250,3 +250,84 @@ public class MemberController {
 ```
 
 → 컴포넌트 스캔이기 때문에 `@Autowired`를 통해 의존관계를 주입한다.
+
+# 5. 회원 관리 예제 - 웹 MVC 개발
+
+### 회원 웹 기능 - 홈 화면 추가
+
+```java
+package hello.hellospring.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class HomeController {
+
+    @GetMapping("/")
+    public String home() {
+        return "home";
+    }
+}
+```
+
+** 컨트롤러가 정적 파일보다 우선순위가 높다.
+
+### 회원 웹 기능 - 등록
+
+- 회원 등록 폼 컨트롤러 (MemberController)
+    
+    ```java
+    @GetMapping("/members/new")
+    public String createForm() {
+        return "members/createMemberForm";
+    }
+    ```
+    
+
+- 회원 등록 컨트롤러
+    - 웹 등록 화면에서 데이터를 전달 받을 폼 객체
+        
+        ```java
+        package hello.hellospring.controller;
+        
+        public class MemberForm {
+            private String name;
+        
+            public String getName() {
+                return name;
+            }
+        
+            public void setName(String name) {
+                this.name = name;
+            }
+        }
+        ```
+        
+    - 회원을 실제 등록하는 기능 (MemberController)
+        
+        ```java
+        @PostMapping("/members/new")
+        public String create(MemberForm form) {
+            Member member = new Member();
+            member.setName(form.getName());
+        
+            memberService.join(member);
+        
+            return "redirect:/";
+        }
+        ```
+        
+
+### 회원 웹 기능 - 조회
+
+- 회원 컨트롤러에서 조회 기능 (MemberController)
+    
+    ```java
+    @GetMapping(value = "/members")
+      public String list(Model model) {
+          List<Member> members = memberService.findMembers();
+          model.addAttribute("members", members);
+          return "members/memberList";
+    }
+    ```
