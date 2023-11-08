@@ -951,3 +951,193 @@ spring.jpa.hibernate.ddl-auto=none
     - 페이징 기능 자동 제공
 
 ** 동적 쿼리 → Querydsl
+
+# 7. AOP
+
+### AOP가 필요한 상황
+
+- MemberService 회원 조회 시간 측정 추가
+    
+    ```java
+    package hello.hellospring.service;
+    
+    import hello.hellospring.domain.Member;
+    import hello.hellospring.repository.MemberRepository;
+    import org.springframework.beans.factory.annotation.Autowired;
+    import org.springframework.stereotype.Service;
+    import org.springframework.transaction.annotation.Transactional;
+    
+    import java.util.List;
+    import java.util.Optional;
+    
+    //@Service
+    @Transactional
+    public class MemberService {
+    
+        private final MemberRepository memberRepository;
+    
+    //    @Autowired
+        public MemberService(MemberRepository memberRepository) {
+            this.memberRepository = memberRepository;
+        }
+    
+        /**
+         * 회원 가입
+         */
+        public Long join(Member member) {
+            long start = System.currentTimeMillis();
+    
+            try {
+                validateDuplicateMember(member); // 중복 회원 검증
+                memberRepository.save(member);
+                return member.getId();
+            } finally {
+                long finish = System.currentTimeMillis();
+                long timeMs = finish - start;
+                System.out.println("join " + timeMs + "ms");
+            }
+        }
+    
+        private void validateDuplicateMember(Member member) {
+            memberRepository.findByName(member.getName())
+                    .ifPresent(m -> {
+                        throw new IllegalStateException("이미 존재하는 회원입니다.");
+                    });
+        }
+    
+        /**
+         * 전체 회원 조회
+         */
+        public List<Member> findMembers() {
+            long start = System.currentTimeMillis();
+    
+            try {
+                return memberRepository.findAll();
+            } finally {
+                long finish = System.currentTimeMillis();
+                long timeMs = finish - start;
+                System.out.println("findMembers " + timeMs + "ms");
+            }
+        }
+    
+        public Optional<Member> findOne(Long memberId) {
+            return memberRepository.findById(memberId);
+        }
+    }
+    ```
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/cd36fe39-64d7-41e0-a01d-62f8c7c55e1a)
+
+    
+
+- 문제점
+    - 시간 측정 → 핵심 관심 사항이 아니다.
+    - 시간을 측정하는 로직은 공통 관심 사항이다.
+    - 시간을 측정하는 로직과 핵심 비즈니스 로직이 섞여서 유지보수가 어렵다.
+    - 시간을 측정하는 로직을 별도의 공통 로직으로 만들기 어렵다.
+    - 시간을 측정하는 로직을 변경할 때 모든 로직을 찾아가면서 변경해야 한다.
+
+⇒ AOP 적용해보자.
+
+### AOP 적용
+
+- AOP (Aspect Oriented Programming)
+    - 공통 관심 사항 / 핵심 관심 사항 분리
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/8a157f32-0561-47f9-87d3-ac4e94ec6819)
+
+    
+
+```java
+package hello.hellospring.aop;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component // 스프링 빈 등록
+public class TimeTraceAop {
+    @Around("execution(* hello.hellospring..*(..))") // 공통 관심 사항 적용 (패키지 하위 모두 적용)
+    public Object execute(ProceedingJoinPoint joinPoint) throws Throwable {
+        long start = System.currentTimeMillis();
+        System.out.println("START: " + joinPoint.toString());
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            long finish = System.currentTimeMillis();
+            long timeMs = finish - start;
+            System.out.println("END: " + joinPoint.toString() + " " + timeMs + "ms");
+        }
+    }
+}
+```
+
+** 스프링 빈 등록 → SpringConfig 파일에서도 가능
+
+```java
+package hello.hellospring;
+
+import hello.hellospring.aop.TimeTraceAop;
+import hello.hellospring.repository.*;
+import hello.hellospring.service.MemberService;
+import jakarta.persistence.EntityManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class SpringConfig {
+
+    private final MemberRepository memberRepository;
+
+    @Autowired
+    public SpringConfig(MemberRepository memberRepository) {
+        this.memberRepository = memberRepository;
+    }
+
+    @Bean
+    public MemberService memberService() {
+        return new MemberService(memberRepository);
+    }
+
+    @Bean
+    public TimeTraceAop timeTraceAop() {
+        return new TimeTraceAop();
+    }
+}
+```
+
+- 문제점 해결
+    - 회원가입, 회원 조회 등 핵심 관심사항과 시간을 측정하는 공통 관심 사항을 분리했다.
+    - 시간을 측정하는 로직을 별도의 공통 로직으로 만들었다.
+    - 핵심 관심 사항을 깔끔하게 유지할 수 있다.
+    - 변경이 필요하면 이 로직만 변경하면 된다.
+    - 원하는 적용 대상을 선택할 수 있다.
+
+- AOP 적용 전 의존 관계
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/c6b2e948-6418-451e-a746-81803feef20d)
+
+
+
+- AOP 적용 후 의존 관계
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/c6780b61-d18b-458f-9a14-31f68467ad4c)
+
+    
+
+- AOP 적용 전 전체 그림
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/8c68d2dd-c013-4a2d-b14b-7aa969f395dc)
+
+    
+
+- AOP 적용 후 전체 그림
+    
+    ![image](https://github.com/Springdingdongrami/spring-introduction/assets/66028419/6406674f-fa51-42c5-8c39-de1ffb0e5cac)
+
